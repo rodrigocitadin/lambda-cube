@@ -27,17 +27,10 @@ def beta_step : Term → Option Term
       | none => none
   | var _ => none
 
-def num_redexes : Term → Nat
-  | var _ => 0
-  | abs _ t => num_redexes t
-  | app (abs _ t) s => 1 + num_redexes t + num_redexes s
-  | app t1 t2 => num_redexes t1 + num_redexes t2
-
 def beta_reduce (t : Term) : Term :=
   match beta_step t with
   | some t' => beta_reduce t'
   | none => t
-  termination_by num_redexes t
   decreasing_by
     simp_wf
     sorry
