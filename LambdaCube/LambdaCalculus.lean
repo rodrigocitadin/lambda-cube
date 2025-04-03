@@ -1,20 +1,19 @@
-inductive Term where
-  | Var (name : String)
-  | Lam (param : String) (body : Term)
-  | App (func : Term) (arg : Term)
-deriving Repr
+inductive Term
+ | var : String → Term
+ | abs : String → Term → Term
+ | app : Term → Term → Term
 
-#eval Term.Lam "x" (Term.Var "x") -- λx.x
-#eval Term.App (Term.Lam "x" (Term.Var "x")) (Term.Var "y") -- (λx.x) y
+ open Term
 
-def substitute (t : Term) (var : String) (value : Term) : Term :=
-  match t with
-  | Term.Var x => if x = var then value else t
-  | Term.Lam x body => if x = var then t else Term.Lam x (substitute body var value)
-  | Term.App func arg => Term.App (substitute func var value) (substitute arg var value)
+ def subst (x : String) (s : Term) : Term → Term
+  | var y           => if x = y then s else var y
+  | abs y t         => if x = y then abs y t else abs y (subst x s t)
+  | app t1 t2       => app (subst x s t1) (subst x s t2)
 
-def betaReduce : Term → Term
-  | Term.App (Term.Lam x body) arg => substitute body x arg
-  | t => t
+def beta_reduce : Term → Term
+ | app (abs x t) s  => subst x s t
+ | app t1 t2        => app (beta_reduce t1) (beta_reduce t2)  
+ | abs x t          => abs x (beta_reduce t)
+ | var x            => var x
 
-#eval betaReduce (Term.App (Term.Lam "x" (Term.Var "x")) (Term.Var "y")) -- ((λx.x) y) → y
+#eval beta_reduce (app (abs "x" (var "x")) (var "y")) -- (λx.x) y → y
